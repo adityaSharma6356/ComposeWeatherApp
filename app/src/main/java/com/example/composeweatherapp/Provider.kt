@@ -9,8 +9,8 @@ interface Provider {
     var possible : Boolean
     @GET("v1/forecast?hourly=temperature_2m&hourly=weathercode&forecast_days=1")
     suspend fun getWeatherData(
-        @Query("latitude") lat: Double,
-        @Query("longitude") long: Double
+        @Query("latitude") lat: Float,
+        @Query("longitude") long: Float
     ): Response<WeatherApiData>
 
 }

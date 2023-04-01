@@ -1,119 +1,118 @@
 package com.example.composeweatherapp.ui.theme
 
-import androidx.annotation.DrawableRes
 import com.example.composeweatherapp.R
 
 sealed class WeatherType(
     val weatherDesc: String,
-    @DrawableRes val iconRes: Int
+    val iconRes: Duel
 ) {
     object ClearSky : WeatherType(
         weatherDesc = "Clear sky",
-        iconRes = R.drawable.ic_sunny
+        iconRes = Duel(R.drawable.sunny,R.drawable.moon),
     )
     object MainlyClear : WeatherType(
         weatherDesc = "Mainly clear",
-        iconRes = R.drawable.ic_cloudy
+        iconRes = Duel(R.drawable.sunny,R.drawable.moon)
     )
     object PartlyCloudy : WeatherType(
         weatherDesc = "Partly cloudy",
-        iconRes = R.drawable.ic_cloudy
+        iconRes = Duel(R.drawable.sunny,R.drawable.moon)
     )
     object Overcast : WeatherType(
         weatherDesc = "Overcast",
-        iconRes = R.drawable.ic_cloudy
+        iconRes = Duel(R.drawable.sunny,R.drawable.moon)
     )
     object Foggy : WeatherType(
         weatherDesc = "Foggy",
-        iconRes = R.drawable.ic_very_cloudy
+        iconRes =Duel( R.drawable.ic_very_cloudy, R.drawable.ic_very_cloudy)
     )
     object DepositingRimeFog : WeatherType(
         weatherDesc = "Depositing rime fog",
-        iconRes = R.drawable.ic_very_cloudy
+        iconRes =Duel( R.drawable.ic_very_cloudy, R.drawable.ic_very_cloudy)
     )
     object LightDrizzle : WeatherType(
         weatherDesc = "Light drizzle",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel(R.drawable.ic_rainshower,R.drawable.ic_rainshower)
     )
     object ModerateDrizzle : WeatherType(
         weatherDesc = "Moderate drizzle",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel(R.drawable.ic_rainshower,R.drawable.ic_rainshower)
     )
     object DenseDrizzle : WeatherType(
         weatherDesc = "Dense drizzle",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel(R.drawable.ic_rainshower,R.drawable.ic_rainshower)
     )
     object LightFreezingDrizzle : WeatherType(
         weatherDesc = "Slight freezing drizzle",
-        iconRes = R.drawable.ic_snowyrainy
+        iconRes = Duel(R.drawable.ic_snowyrainy,R.drawable.ic_snowyrainy)
     )
     object DenseFreezingDrizzle : WeatherType(
         weatherDesc = "Dense freezing drizzle",
-        iconRes = R.drawable.ic_snowyrainy
+        iconRes = Duel(R.drawable.ic_snowyrainy,R.drawable.ic_snowyrainy)
     )
     object SlightRain : WeatherType(
         weatherDesc = "Slight rain",
-        iconRes = R.drawable.ic_rainy
+        iconRes = Duel( R.drawable.ic_rainy, R.drawable.ic_rainy)
     )
     object ModerateRain : WeatherType(
         weatherDesc = "Rainy",
-        iconRes = R.drawable.ic_rainy
+        iconRes = Duel( R.drawable.ic_rainy, R.drawable.ic_rainy)
     )
     object HeavyRain : WeatherType(
         weatherDesc = "Heavy rain",
-        iconRes = R.drawable.ic_rainy
+        iconRes = Duel( R.drawable.ic_rainy, R.drawable.ic_rainy)
     )
     object HeavyFreezingRain: WeatherType(
         weatherDesc = "Heavy freezing rain",
-        iconRes = R.drawable.ic_snowyrainy
+        iconRes = Duel(R.drawable.ic_snowyrainy,R.drawable.ic_snowyrainy)
     )
     object SlightSnowFall: WeatherType(
         weatherDesc = "Slight snow fall",
-        iconRes = R.drawable.ic_snowy
+        iconRes = Duel(R.drawable.ic_snowy,R.drawable.ic_snowy)
     )
     object ModerateSnowFall: WeatherType(
         weatherDesc = "Moderate snow fall",
-        iconRes = R.drawable.ic_heavysnow
+        iconRes = Duel(R.drawable.ic_heavysnow,R.drawable.ic_heavysnow)
     )
     object HeavySnowFall: WeatherType(
         weatherDesc = "Heavy snow fall",
-        iconRes = R.drawable.ic_heavysnow
+        iconRes = Duel(R.drawable.ic_heavysnow,R.drawable.ic_heavysnow)
     )
     object SnowGrains: WeatherType(
         weatherDesc = "Snow grains",
-        iconRes = R.drawable.ic_heavysnow
+        iconRes = Duel(R.drawable.ic_heavysnow,R.drawable.ic_heavysnow)
     )
     object SlightRainShowers: WeatherType(
         weatherDesc = "Slight rain showers",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel( R.drawable.ic_rainy, R.drawable.ic_rainy)
     )
     object ModerateRainShowers: WeatherType(
         weatherDesc = "Moderate rain showers",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel(R.drawable.ic_rainshower,R.drawable.ic_rainshower)
     )
     object ViolentRainShowers: WeatherType(
         weatherDesc = "Violent rain showers",
-        iconRes = R.drawable.ic_rainshower
+        iconRes = Duel(R.drawable.ic_rainshower,R.drawable.ic_rainshower)
     )
     object SlightSnowShowers: WeatherType(
         weatherDesc = "Light snow showers",
-        iconRes = R.drawable.ic_snowy
+        iconRes = Duel( R.drawable.ic_snowy, R.drawable.ic_snowy)
     )
     object HeavySnowShowers: WeatherType(
         weatherDesc = "Heavy snow showers",
-        iconRes = R.drawable.ic_snowy
+        iconRes = Duel( R.drawable.ic_snowy, R.drawable.ic_snowy)
     )
     object ModerateThunderstorm: WeatherType(
         weatherDesc = "Moderate thunderstorm",
-        iconRes = R.drawable.ic_thunder
+        iconRes = Duel(R.drawable.ic_thunder,R.drawable.ic_thunder)
     )
     object SlightHailThunderstorm: WeatherType(
         weatherDesc = "Thunderstorm with slight hail",
-        iconRes = R.drawable.ic_rainythunder
+        iconRes = Duel(R.drawable.ic_rainythunder,R.drawable.ic_rainythunder)
     )
     object HeavyHailThunderstorm: WeatherType(
         weatherDesc = "Thunderstorm with heavy hail",
-        iconRes = R.drawable.ic_rainythunder
+        iconRes = Duel(R.drawable.ic_rainythunder,R.drawable.ic_rainythunder)
     )
 
     companion object {
@@ -153,4 +152,8 @@ sealed class WeatherType(
     }
 }
 
+data class Duel(
+    val day : Int,
+    val night : Int
+)
 

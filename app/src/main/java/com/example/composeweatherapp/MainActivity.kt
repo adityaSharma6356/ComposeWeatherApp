@@ -9,34 +9,44 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.composeweatherapp.ui.Composables.MainUI
 import com.example.composeweatherapp.ui.theme.ComposeWeatherAppTheme
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.gms.location.*
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
 
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
     private var locationCallback: LocationCallback? = null
-    private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationRequired = false
+    private var fusedLocationClient: FusedLocationProviderClient? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        mainViewModel.state.value.weatherInfo =  dataLoader(this)
+        val ct = Instant.now()
+        mainViewModel.currentDateTime = ct.atZone(ZoneId.systemDefault()).hour
+        mainViewModel.currentDay = ct.atZone(ZoneId.systemDefault()).dayOfMonth
+        mainViewModel.currentMonth = ct.atZone(ZoneId.systemDefault()).monthValue
+        mainViewModel.currentYear = ct.atZone(ZoneId.systemDefault()).year
+        mainViewModel.currentDayName = ct.atZone(ZoneId.systemDefault()).dayOfWeek.name
+
         permissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) {
             lifecycleScope.launch {
                 startLocationUpdates()
-                mainViewModel.loadWeatherInfo()
+                mainViewModel.loadWeatherInfo(this@MainActivity)
             }
         }
         permissionLauncher.launch(
@@ -46,38 +56,31 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
         )
+
+
         setContent {
-            ComposeWeatherAppTheme {
-                val context = LocalContext.current
-                var currentLocation by remember { mutableStateOf(LocationDetails(0.0, 0.0)) }
-                fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-                locationCallback = object : LocationCallback() {
-                    override fun onLocationResult(p0: LocationResult) {
-                        for (lo in p0.locations) {
-                            currentLocation = LocationDetails(lo.latitude, lo.longitude)
-                            mainViewModel.myLocation.longitude = currentLocation.longitude
-                            mainViewModel.myLocation.latitiude = currentLocation.latitiude
-                        }
+            var currentLocation by remember { mutableStateOf(LocationDetails(0.0, 0.0)) }
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(p0: LocationResult) {
+                    for (lo in p0.locations) {
+                        currentLocation = LocationDetails(lo.latitude, lo.longitude)
+                        mainViewModel.myLocation.longitude = currentLocation.longitude
+                        mainViewModel.myLocation.latitiude = currentLocation.latitiude
+                        lifecycleScope.launch { mainViewModel.loadWeatherInfo(this@MainActivity) }
                     }
                 }
-                val systemUiController = rememberSystemUiController()
-                SideEffect {
-                    systemUiController.setStatusBarColor(color = Color.Transparent)
-                    systemUiController.systemBarsDarkContentEnabled = true
-                }
-
-
-
-
+            }
+            ComposeWeatherAppTheme {
+                MainUI(mainViewModel = mainViewModel, context = this, )
             }
         }
     }
-
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         locationCallback?.let {
             val locationRequest = LocationRequest.create().apply {
-                interval = 10000
+                interval = 120000
                 fastestInterval = 5000
                 priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             }
