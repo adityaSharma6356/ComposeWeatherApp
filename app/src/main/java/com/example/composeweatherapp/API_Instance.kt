@@ -4,7 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object API_Instance {
-    private val API_URL = "https://api.open-meteo.com/"
+    private const val API_URL = "https://api.weatherapi.com/"
 
     val api : Provider by lazy {
         Retrofit.Builder()

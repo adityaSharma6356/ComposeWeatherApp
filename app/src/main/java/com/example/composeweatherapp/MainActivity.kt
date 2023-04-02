@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             ComposeWeatherAppTheme {
-                MainUI(mainViewModel = mainViewModel, context = this, )
+                MainUI(mainViewModel = mainViewModel, context = this)
             }
         }
     }
@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
     private fun startLocationUpdates() {
         locationCallback?.let {
             val locationRequest = LocationRequest.create().apply {
-                interval = 120000
+                interval = 500000
                 fastestInterval = 5000
                 priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             }

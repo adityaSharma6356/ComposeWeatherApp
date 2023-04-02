@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,10 +32,11 @@ import androidx.constraintlayout.compose.Visibility
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.composeweatherapp.MainViewModel
+import com.example.composeweatherapp.NewWeatherData.imagecode
 import com.example.composeweatherapp.R
-import com.example.composeweatherapp.ui.theme.WeatherType
 import com.example.composeweatherapp.ui.theme.temfamily
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.NonDisposableHandle.parent
 
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +55,7 @@ fun MainUI(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
-        systemUiController.systemBarsDarkContentEnabled = mainViewModel.currentDateTime in 7..19
+        systemUiController.statusBarDarkContentEnabled = false
     }
 
     ConstraintLayout(
@@ -82,7 +83,7 @@ fun MainUI(
             targetValue = mainViewModel.tempsizestate,
             animationSpec = tween(700)
         )
-        Text(text = "${mainViewModel.state.value.weatherInfo?.hourly?.temperature_2m?.get(mainViewModel.currentDateTime).toString()}°" ,
+        Text(text = "${mainViewModel.state.value.weatherInfo?.current?.temp_c?.toInt()}°" ,
             modifier = Modifier
                 .constrainAs(currentTemp) {
                     top.linkTo(parent.top, margin = temppad)
@@ -119,27 +120,25 @@ fun MainUI(
             fontFamily = temfamily,
             fontWeight = FontWeight.Normal,
             color = Color.White)
-        Text(text = "AQI 220",
+        Text(text = "AQI "+ mainViewModel.state.value.weatherInfo?.forecast?.forecastday?.get(0)?.day?.air_quality?.pm10?.toInt()
+            .toString(),
             modifier = Modifier
                 .constrainAs(airQuality){
                     top.linkTo(parent.top, margin = 55.dp)
                     start.linkTo(parent.start, margin = 20.dp)
                 },
             fontSize = 18.sp,
-            fontFamily = temfamily,
+            fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.Normal,
             color = Color.White)
-        mainViewModel.state.value.weatherInfo?.hourly?.weathercode?.get(mainViewModel.currentDateTime)?.let { WeatherType.fromWMO(it).iconRes }
-            ?.let { painterResource(id = if(mainViewModel.currentDateTime in 7..19) it.day else it.night) }
-            ?.let { Image(
-                painter = it,
+            Image(
+                painter = painterResource(id = imagecode(mainViewModel.weathericoncode)) ,
                 contentDescription = "Weather Icon",
                 modifier = Modifier
                     .constrainAs(weatherIcon) {
                         end.linkTo(parent.end, margin = 15.dp)
                         top.linkTo(parent.top, margin = 55.dp)
                     }
-
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null
@@ -147,30 +146,29 @@ fun MainUI(
                         mainViewModel.changeBarHeight()
                     }
                     .size(30.dp),
-            ) }
+            )
+
         Card(modifier = Modifier
             .constrainAs(precipitationChance) {
                 top.linkTo(weatherIcon.bottom, margin = 10.dp)
                 end.linkTo(parent.end, margin = 15.dp)
             }
             .height(35.dp)
-            .width(80.dp),
-            shape = RoundedCornerShape(50),
-            border = BorderStroke(1.dp , Color.White),
+            .width(100.dp),
             colors = CardDefaults.cardColors(Color.Transparent)
         ) {
             Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_drop),
+                    painter = painterResource(id = R.drawable.wind_icon),
                     contentDescription = "drop icon",
                     modifier = Modifier
                         .size(25.dp)
                         .aspectRatio(1f),
                     contentScale = ContentScale.Fit
                 )
-                Text(text = "69%",
+                Text(text = mainViewModel.state.value.weatherInfo?.current?.wind_kph?.toInt().toString()+"km/h",
                     fontSize = 22.sp,
-                    fontWeight = FontWeight.Thin,
+                    fontFamily = temfamily,
                     color = Color.White)
             }
         }
@@ -186,17 +184,18 @@ fun MainUI(
             color = Color.White,
             strokeWidth = 1.dp
         )
-        Text(text = mainViewModel.state.value.weatherInfo?.hourly?.weathercode?.get(mainViewModel.currentDateTime)
-            ?.let { WeatherType.fromWMO(it).weatherDesc }.toString(),
-            modifier = Modifier
-                .constrainAs(weatherInfo){
-                    top.linkTo(parent.top, margin = 55.dp)
-                    end.linkTo(weatherIcon.start, margin = 10.dp)
-                },
-            fontSize = 18.sp,
-            fontFamily = temfamily,
-            fontWeight = FontWeight.Normal,
-            color = Color.White)
+        mainViewModel.state.value.weatherInfo?.current?.condition?.let {
+            Text(text = it.text,
+                modifier = Modifier
+                    .constrainAs(weatherInfo){
+                        top.linkTo(parent.top, margin = 55.dp)
+                        end.linkTo(weatherIcon.start, margin = 10.dp)
+                    },
+                fontSize = 18.sp,
+                fontFamily = temfamily,
+                fontWeight = FontWeight.Normal,
+                color = Color.White)
+        }
 
         val height by animateDpAsState(targetValue = mainViewModel.barHeightState.dp,
             animationSpec = tween(700)
@@ -229,13 +228,6 @@ fun MainUI(
                     contentScale = ContentScale.Crop,
                     alignment = Alignment.BottomCenter)
             }
-
         }
-//        Text(text = "Today's Forecast",
-//            fontSize = 18.sp,
-//            fontFamily = temfamily,
-//            fontWeight = FontWeight.Normal,
-//            color = Color.White)
-
     }
 }
