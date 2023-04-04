@@ -1,4 +1,4 @@
-package com.example.composeweatherapp.NewWeatherData
+package com.example.composeweatherapp.newWeatherData
 
 data class Astro(
     val is_moon_up: Int,

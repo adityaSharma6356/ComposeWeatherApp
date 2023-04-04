@@ -2,6 +2,8 @@ package com.example.composeweatherapp
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import androidx.activity.ComponentActivity
@@ -13,17 +15,24 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.composeweatherapp.newWeatherData.WeatherDataClasses
+import com.example.composeweatherapp.newWeatherData.jsonstring
 import com.example.composeweatherapp.ui.Composables.MainUI
 import com.example.composeweatherapp.ui.theme.ComposeWeatherAppTheme
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.gms.location.*
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 
+
+var weathercode : WeatherDataClasses? = null
 class MainActivity : ComponentActivity() {
-    private val mainViewModel: MainViewModel by viewModels()
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
     private var locationCallback: LocationCallback? = null
     private var locationRequired = false
@@ -33,7 +42,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        mainViewModel.state.value.weatherInfo =  dataLoader(this)
+        weathercode = Gson().fromJson(jsonstring, WeatherDataClasses::class.java)
+        val mainViewModel : MainViewModel by viewModels()
+        mainViewModel.state!!.weatherInfo =  dataLoader(this, weathercode!!)
         val ct = Instant.now()
         mainViewModel.currentDateTime = ct.atZone(ZoneId.systemDefault()).hour
         mainViewModel.currentDay = ct.atZone(ZoneId.systemDefault()).dayOfMonth
@@ -56,8 +67,6 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION,
             )
         )
-
-
         setContent {
             var currentLocation by remember { mutableStateOf(LocationDetails(0.0, 0.0)) }
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -72,6 +81,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
             ComposeWeatherAppTheme {
+                val systemUiController = rememberSystemUiController()
+                SideEffect {
+                    val window = (this as Activity).window
+                    window.statusBarColor = Color.Transparent.toArgb()
+                    window.navigationBarColor = Color.Transparent.toArgb()
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        window.isNavigationBarContrastEnforced = false
+                    }
+                    systemUiController.statusBarDarkContentEnabled = false
+                }
                 MainUI(mainViewModel = mainViewModel, context = this)
             }
         }

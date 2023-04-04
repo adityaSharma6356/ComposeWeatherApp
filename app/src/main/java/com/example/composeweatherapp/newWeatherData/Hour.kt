@@ -1,4 +1,4 @@
-package com.example.composeweatherapp.NewWeatherData
+package com.example.composeweatherapp.newWeatherData
 
 data class Hour(
     val air_quality: AirQuality,

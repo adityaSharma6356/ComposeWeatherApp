@@ -1,12 +1,10 @@
 package com.example.composeweatherapp.ui.Composables
 
-import android.app.Activity
 import android.content.Context
-import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,12 +13,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -31,32 +27,21 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Visibility
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.composeweatherapp.BottomWindow
 import com.example.composeweatherapp.MainViewModel
-import com.example.composeweatherapp.NewWeatherData.imagecode
 import com.example.composeweatherapp.R
 import com.example.composeweatherapp.ui.theme.temfamily
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.NonDisposableHandle.parent
 
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun MainUI(
     mainViewModel: MainViewModel,
     context: Context,
-){
-
-    val systemUiController = rememberSystemUiController()
-
-    SideEffect {
-        val window = (context as Activity).window
-        window.statusBarColor = Color.Transparent.toArgb()
-        window.navigationBarColor = Color.Transparent.toArgb()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
-        systemUiController.statusBarDarkContentEnabled = false
+) {
+    BackHandler(enabled = mainViewModel.backHandler) {
+        mainViewModel.changeBarHeight()
     }
+
 
     ConstraintLayout(
         modifier = Modifier
@@ -64,30 +49,68 @@ fun MainUI(
             .background(Color.Transparent)
     ) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            GlideImage(model = mainViewModel.backgroundImageState,
+            GlideImage(
+                model = mainViewModel.backgroundImageState,
                 contentDescription = "background",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillHeight)
+                contentScale = ContentScale.FillHeight
+            )
         }
-        val (currentTemp ,precipitationChance , currentTimeDate, currentDay,airQuality , progressBar, weatherInfo, weatherIcon, expandableBar, bottomBarTitle) = createRefs()
+        val (hilo ,dayComment ,currentTemp, precipitationChance, currentTimeDate, currentDay, airQuality, progressBar, weatherInfo, weatherIcon, expandableBar, locationName) = createRefs()
         val interactionSource = MutableInteractionSource()
-        val temppad by animateDpAsState(
-            targetValue = mainViewModel.tempAnimState.dp,
-            animationSpec = tween(700)
-        )
-        val dateTimepad by animateDpAsState(
-            targetValue = mainViewModel.dayDateleftpad.dp,
-            animationSpec = tween(700)
-        )
         val tempsize by animateIntAsState(
-            targetValue = mainViewModel.tempsizestate,
+            targetValue = if(mainViewModel.currentUIState){
+                70
+            } else {
+                100
+            },
             animationSpec = tween(700)
         )
-        Text(text = "${mainViewModel.state.value.weatherInfo?.current?.temp_c?.toInt()}°" ,
+        val templeft by animateIntAsState(
+            targetValue = if(mainViewModel.currentUIState){
+                20
+            } else {
+                50
+            },
+            animationSpec = tween(700)
+        )
+        val height by animateIntAsState(
+            targetValue = if(mainViewModel.currentUIState){
+                220
+            } else {
+                1000
+            },
+            animationSpec = tween(700)
+        )
+        val temppad by animateIntAsState(
+            targetValue = if(mainViewModel.currentUIState){
+                80
+            } else {
+                200
+            },
+            animationSpec = tween(700)
+        )
+        val dateTimepad by animateIntAsState(
+            targetValue = if(mainViewModel.currentUIState){
+                0
+            } else {
+                255
+            },
+            animationSpec = tween(700)
+        )
+        val blurheight by animateDpAsState(
+            targetValue = if(mainViewModel.currentUIState){
+                0
+            } else {
+                780
+            }.dp,
+            animationSpec = tween(700)
+        )
+        Text(text = "${mainViewModel.currentTemp}°",
             modifier = Modifier
                 .constrainAs(currentTemp) {
-                    top.linkTo(parent.top, margin = temppad)
-                    start.linkTo(parent.start, margin = 50.dp)
+                    top.linkTo(parent.top, margin = temppad.dp)
+                    start.linkTo(parent.start, margin = templeft.dp)
                 }
                 .clickable(
                     interactionSource = interactionSource,
@@ -98,55 +121,96 @@ fun MainUI(
             fontSize = tempsize.sp,
             fontFamily = temfamily,
             fontWeight = FontWeight.Thin,
-            color = Color.White)
-
-        Text(text = "${mainViewModel.currentDay}/${mainViewModel.currentMonth}/${mainViewModel.currentYear}" ,
+            color = Color.White
+        )
+        Text(
+            text = mainViewModel.dayComment(),
+            color = Color.White,
+            fontFamily = temfamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            modifier = Modifier.constrainAs(dayComment) {
+                start.linkTo(currentTemp.end, margin = 5.dp)
+                bottom.linkTo(currentTemp.bottom, margin = 0.dp)
+            }
+        )
+        Text(
+            text = mainViewModel.feelslike(),
+            color = Color.White,
+            fontFamily = temfamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            modifier = Modifier.constrainAs(hilo) {
+                start.linkTo(currentTemp.end, margin = 5.dp)
+                bottom.linkTo(dayComment.top, margin = 5.dp)
+            }
+        )
+        Text(
+            text = "${mainViewModel.currentDay}/${mainViewModel.currentMonth}/${mainViewModel.currentYear}",
             modifier = Modifier
-                .constrainAs(currentTimeDate){
-                    bottom.linkTo(currentTemp.top,)
-                    start.linkTo(parent.start, margin = dateTimepad)
+                .constrainAs(currentTimeDate) {
+                    bottom.linkTo(currentTemp.top)
+                    start.linkTo(parent.start, margin = 50.dp)
                 },
             fontSize = 20.sp,
             fontFamily = temfamily,
             fontWeight = FontWeight.Normal,
-            color = Color.White)
-        Text(text = mainViewModel.currentDayName,
+            color = Color(255, 255, 255, dateTimepad)
+        )
+        Text(
+            text = mainViewModel.currentDayName,
             modifier = Modifier
-                .constrainAs(currentDay){
-                    top.linkTo(currentTimeDate.bottom,)
-                    start.linkTo(parent.start, margin = dateTimepad)
+                .constrainAs(currentDay) {
+                    top.linkTo(currentTimeDate.bottom)
+                    start.linkTo(parent.start, margin = 50.dp)
                 },
             fontSize = 18.sp,
             fontFamily = temfamily,
             fontWeight = FontWeight.Normal,
-            color = Color.White)
-        Text(text = "AQI "+ mainViewModel.state.value.weatherInfo?.forecast?.forecastday?.get(0)?.day?.air_quality?.pm10?.toInt()
-            .toString(),
+            color = Color(255, 255, 255, dateTimepad)
+        )
+        Text(
+            text = mainViewModel.currentLocationName,
             modifier = Modifier
-                .constrainAs(airQuality){
+                .constrainAs(locationName) {
+                    bottom.linkTo(currentTimeDate.top)
+                    start.linkTo(parent.start, margin = 50.dp)
+                },
+            fontSize = 18.sp,
+            fontFamily = temfamily,
+            fontWeight = FontWeight.Normal,
+            color = Color(255, 255, 255, dateTimepad)
+        )
+
+        Text(
+            text = "AQI " + mainViewModel.currentAQI
+                .toString(),
+            modifier = Modifier
+                .constrainAs(airQuality) {
                     top.linkTo(parent.top, margin = 55.dp)
                     start.linkTo(parent.start, margin = 20.dp)
                 },
             fontSize = 18.sp,
             fontFamily = FontFamily.SansSerif,
-            fontWeight = FontWeight.Normal,
-            color = Color.White)
-            Image(
-                painter = painterResource(id = imagecode(mainViewModel.weathericoncode)) ,
-                contentDescription = "Weather Icon",
-                modifier = Modifier
-                    .constrainAs(weatherIcon) {
-                        end.linkTo(parent.end, margin = 15.dp)
-                        top.linkTo(parent.top, margin = 55.dp)
-                    }
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null
-                    ) {
-                        mainViewModel.changeBarHeight()
-                    }
-                    .size(30.dp),
-            )
+            fontWeight = FontWeight.Thin,
+            color = Color.White
+        )
+        Image(
+            painter = painterResource(id = mainViewModel.imagecode(mainViewModel.weathericoncode, mainViewModel.currentDateTime)),
+            contentDescription = "Weather Icon",
+            modifier = Modifier
+                .constrainAs(weatherIcon) {
+                    end.linkTo(parent.end, margin = 15.dp)
+                    top.linkTo(parent.top, margin = 55.dp)
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) {
+                    mainViewModel.changeBarHeight()
+                }
+                .size(30.dp),
+        )
 
         Card(modifier = Modifier
             .constrainAs(precipitationChance) {
@@ -157,7 +221,11 @@ fun MainUI(
             .width(100.dp),
             colors = CardDefaults.cardColors(Color.Transparent)
         ) {
-            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.wind_icon),
                     contentDescription = "drop icon",
@@ -166,15 +234,26 @@ fun MainUI(
                         .aspectRatio(1f),
                     contentScale = ContentScale.Fit
                 )
-                Text(text = mainViewModel.state.value.weatherInfo?.current?.wind_kph?.toInt().toString()+"km/h",
+                Text(
+                    text = mainViewModel.state!!.weatherInfo.current.wind_kph.toInt()
+                        .toString() + "k/h",
                     fontSize = 22.sp,
-                    fontFamily = temfamily,
-                    color = Color.White)
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Thin,
+                    color = Color.White
+                )
             }
         }
         CircularProgressIndicator(
             modifier = Modifier
                 .size(20.dp)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) {
+                    mainViewModel.loadWeatherInfo(context)
+                    mainViewModel.state = mainViewModel.state
+                }
                 .constrainAs(progressBar) {
                     top.linkTo(precipitationChance.bottom, margin = 10.dp)
                     end.linkTo(parent.end, margin = 20.dp)
@@ -184,50 +263,31 @@ fun MainUI(
             color = Color.White,
             strokeWidth = 1.dp
         )
-        mainViewModel.state.value.weatherInfo?.current?.condition?.let {
-            Text(text = it.text,
+        mainViewModel.state!!.weatherInfo.current.condition.let {
+            Text(
+                text = it.text,
                 modifier = Modifier
-                    .constrainAs(weatherInfo){
+                    .constrainAs(weatherInfo) {
                         top.linkTo(parent.top, margin = 55.dp)
                         end.linkTo(weatherIcon.start, margin = 10.dp)
                     },
                 fontSize = 18.sp,
-                fontFamily = temfamily,
-                fontWeight = FontWeight.Normal,
-                color = Color.White)
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Thin,
+                color = Color.White
+            )
         }
-
-        val height by animateDpAsState(targetValue = mainViewModel.barHeightState.dp,
-            animationSpec = tween(700)
-        )
-
-        val blurheight by animateDpAsState(targetValue = mainViewModel.blurImgState.dp,
-            animationSpec = tween(700)
-        )
-        Card(modifier = Modifier
-            .constrainAs(expandableBar) {
-                top.linkTo(parent.top, margin = height)
-            }
-            .fillMaxWidth()
-            .height(800.dp),
+        Card(
+            modifier = Modifier
+                .constrainAs(expandableBar) {
+                    top.linkTo(parent.top, margin = height.dp)
+                }
+                .fillMaxWidth()
+                .height(800.dp),
+            elevation = CardDefaults.cardElevation(15.dp),
             shape = RoundedCornerShape(35.dp),
-            border = BorderStroke(1.dp , Color.White),
-            colors = CardDefaults.cardColors(Color.Transparent)
         ) {
-            ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-                val (bgImage, todayTitle, todayInfo) = createRefs()
-                Image(
-                    painter = painterResource(id = mainViewModel.backgroundImageBlurredState),
-                    contentDescription = "background",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(800.dp)
-                        .constrainAs(bgImage) {
-                            bottom.linkTo(parent.bottom, margin = blurheight)
-                        },
-                    contentScale = ContentScale.Crop,
-                    alignment = Alignment.BottomCenter)
-            }
+            BottomWindow(mainViewModel = mainViewModel, blurheight = blurheight)
         }
     }
 }
