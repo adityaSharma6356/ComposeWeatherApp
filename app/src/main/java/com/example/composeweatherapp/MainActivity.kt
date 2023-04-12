@@ -3,14 +3,19 @@ package com.example.composeweatherapp
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
+import android.location.Location
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -29,22 +34,25 @@ import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 
 var weathercode : WeatherDataClasses? = null
 class MainActivity : ComponentActivity() {
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
-    private var locationCallback: LocationCallback? = null
-    private var locationRequired = false
-    private var fusedLocationClient: FusedLocationProviderClient? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
+    @SuppressLint("MissingPermission")
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         weathercode = Gson().fromJson(jsonstring, WeatherDataClasses::class.java)
         val mainViewModel : MainViewModel by viewModels()
         mainViewModel.state!!.weatherInfo =  dataLoader(this, weathercode!!)
+        mainViewModel.myLocation = loadStoredLocation(this)
         val ct = Instant.now()
         mainViewModel.currentDateTime = ct.atZone(ZoneId.systemDefault()).hour
         mainViewModel.currentDay = ct.atZone(ZoneId.systemDefault()).dayOfMonth
@@ -56,8 +64,16 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.RequestMultiplePermissions()
         ) {
             lifecycleScope.launch {
-                startLocationUpdates()
-                mainViewModel.loadWeatherInfo(this@MainActivity)
+                fusedLocationClient = LocationServices.getFusedLocationProviderClient(this@MainActivity)
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location : Location? ->
+                        if(location!=null){
+                            mainViewModel.myLocation.longitude = location.longitude
+                            mainViewModel.myLocation.latitiude = location.latitude
+                            storeLocation(LocationDetails(location.latitude , location.longitude), this@MainActivity)
+                        }
+                        mainViewModel.loadWeatherInfo(this@MainActivity)
+                    }
             }
         }
         permissionLauncher.launch(
@@ -68,18 +84,6 @@ class MainActivity : ComponentActivity() {
             )
         )
         setContent {
-            var currentLocation by remember { mutableStateOf(LocationDetails(0.0, 0.0)) }
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(p0: LocationResult) {
-                    for (lo in p0.locations) {
-                        currentLocation = LocationDetails(lo.latitude, lo.longitude)
-                        mainViewModel.myLocation.longitude = currentLocation.longitude
-                        mainViewModel.myLocation.latitiude = currentLocation.latitiude
-                        lifecycleScope.launch { mainViewModel.loadWeatherInfo(this@MainActivity) }
-                    }
-                }
-            }
             ComposeWeatherAppTheme {
                 val systemUiController = rememberSystemUiController()
                 SideEffect {
@@ -95,32 +99,6 @@ class MainActivity : ComponentActivity() {
                 MainUI(mainViewModel = mainViewModel, context = this)
             }
         }
-    }
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        locationCallback?.let {
-            val locationRequest = LocationRequest.create().apply {
-                interval = 500000
-                fastestInterval = 5000
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
-            fusedLocationClient?.requestLocationUpdates(
-                locationRequest,
-                it,
-                Looper.getMainLooper()
-            )
-        }
-    }
-    override fun onResume() {
-        super.onResume()
-        if (locationRequired) {
-            startLocationUpdates()
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        locationCallback?.let { fusedLocationClient?.removeLocationUpdates(it) }
     }
 }
 

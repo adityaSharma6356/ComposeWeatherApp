@@ -19,15 +19,15 @@ import java.io.IOException
 
 
 class MainViewModel : ViewModel() {
-    val myLocation = LocationDetails(37.4219983, -122.084)
+    var myLocation = LocationDetails(28.6983, 77.0)
     var state by mutableStateOf(weathercode?.let { WeatherState(weatherInfo = it) })
     var backgroundImageState by mutableStateOf(R.drawable.sunny_background)
     var backgroundImageBlurredState by mutableStateOf(R.drawable.sunny_background_blur)
-    var currentDateTime = 0
-    var currentDay = 0
-    var currentMonth = 0
-    var currentYear = 0
-    var currentDayName = ""
+    var currentDateTime by mutableStateOf(0)
+    var currentDay by mutableStateOf(0)
+    var currentMonth by mutableStateOf(0)
+    var currentYear by mutableStateOf(0)
+    var currentDayName by mutableStateOf(" ")
     var progressState by mutableStateOf(false)
     var backHandler by mutableStateOf(false)
     var weathericoncode by mutableStateOf(1000)
@@ -162,22 +162,3 @@ data class LocationDetails(
     var longitude : Double,
 )
 
-fun storedata (it : WeatherDataClasses, context: Context) {
-    val sharedpef = context.getSharedPreferences("weatherAppComposeFolder" , Context.MODE_PRIVATE)
-    val editor = sharedpef.edit()
-    val gson = Gson()
-    val json = gson.toJson(it)
-    editor.putString("weatherAppComposeFile" , json)
-    editor.apply()
-}
-fun dataLoader(context: Context, data : WeatherDataClasses) : WeatherDataClasses {
-    val shared = context.getSharedPreferences("weatherAppComposeFolder" , Context.MODE_PRIVATE)
-
-    val json = shared.getString("weatherAppComposeFile" , null)
-
-    if(json!=null) {
-        val turnsType = object : TypeToken<WeatherDataClasses>() {}.type
-        return Gson().fromJson(json, turnsType)
-    }
-    return data
-}
